@@ -35,7 +35,7 @@ def parse_wellbeing(csv_dir):
         "administrative-geography": LA_CODE,
         "measure-of-wellbeing": "wellbeing_measure",
     }
-    return subset_rename_df(df.loc[:, df["wellbeing-estimate"] == "average-mean"], cols)
+    return subset_rename_df(df.loc[df["wellbeing-estimate"] == "average-mean"], cols)
 
 
 def parse_population_age(csv_dir):
@@ -57,7 +57,7 @@ def parse_population_age(csv_dir):
 
     cols = {
         "LA Code (2021 boundaries)": LA_CODE,
-        "LA Name (2021 boundaries)": LA_NAME,
+        "LA name (2021 boundaries)": LA_NAME,
         "Ward Code 1": "ward_code",
         "Ward Name 1": "ward_name",
         "All Ages": "total_population",
@@ -79,7 +79,7 @@ def parse_rental_summary(csv_dir):
         "Mean": "mean_rent",
     }
     # When "LA Code1" is NaN, that entry is an aggregate statistic, eg for England
-    return subset_rename_df(df.dropna(subset=["LA Code1"]), cols)
+    return subset_rename_df(df, cols).dropna(subset=[LA_CODE])
 
 
 def parse_crime(csv_dir):
@@ -91,10 +91,10 @@ def parse_crime(csv_dir):
     cols = {
         "Local Authority code": LA_CODE,
         "Household figures (mid-2019) - rounded to 100": "num_households",
-        "Total recorded crime (excluding fraud)": "total_crime",
+        "Total recorded crime\n (excluding fraud)": "total_crime",
         "Residential burglary (per 1,000 household)": "burgalry_per_household",
     }
-    return subset_rename_df(df, cols)
+    return subset_rename_df(df, cols).dropna(subset=[LA_CODE])
 
 
 def parse_property_sales(csv_dir):
@@ -108,7 +108,7 @@ def parse_property_sales(csv_dir):
         "Ward code": "ward_code",
         "Year ending Jun 2021": "num_sold",
     }
-    return subset_rename_df(df, cols)
+    return subset_rename_df(df, cols).dropna(subset=[LA_CODE])
 
 
 def parse_property_prices(csv_dir):
