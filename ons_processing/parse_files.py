@@ -2,6 +2,8 @@
 Functions for parsing ONS data into a format ready for analysis
 
 Some preprocessing has already been done on the downloaded excel files to make the parsing easier.
+
+FIXME: some repetition here between functions. Can fix eg by creating a single loading class/function
 """
 
 import os
@@ -29,13 +31,19 @@ def parse_wellbeing(csv_dir):
     https://download.ons.gov.uk/downloads/datasets/wellbeing-local-authority/editions/time-series/versions/2.csv
     """
     df = load_df(csv_dir, "wellbeing.csv")
+    df = df.loc[(df["wellbeing-estimate"] == "average-mean") & (df.Time == "2020-21")]
 
     cols = {
         "V4_3": "wellbeing_score",
         "administrative-geography": LA_CODE,
         "measure-of-wellbeing": "wellbeing_measure",
     }
-    return subset_rename_df(df.loc[df["wellbeing-estimate"] == "average-mean"], cols)
+    sub_df = subset_rename_df(df, cols)
+    return (
+        sub_df.drop_duplicates(subset=["la_code", "wellbeing_measure"])
+        .pivot(index="la_code", columns="wellbeing_measure", values="wellbeing_score")
+        .reset_index()
+    )
 
 
 def parse_population_age(csv_dir):
@@ -63,7 +71,14 @@ def parse_population_age(csv_dir):
         "All Ages": "total_population",
         **dict(zip(age_labels, age_labels)),
     }
-    return subset_rename_df(df, cols)
+    sub_df = subset_rename_df(df, cols)
+    return (
+        sub_df.groupby(["la_code", "la_name"])[
+            ["total_population", "child", "adult", "elderly"]
+        ]
+        .sum()
+        .reset_index()
+    )
 
 
 def parse_rental_summary(csv_dir):
@@ -108,7 +123,10 @@ def parse_property_sales(csv_dir):
         "Ward code": "ward_code",
         "Year ending Jun 2021": "num_sold",
     }
-    return subset_rename_df(df, cols).dropna(subset=[LA_CODE])
+    sub_df = subset_rename_df(df, cols).dropna(subset=[LA_CODE])
+    return (
+        sub_df.groupby(LA_CODE)["num_sold"].sum().reset_index()
+    )  # aggregate over la codes
 
 
 def parse_property_prices(csv_dir):
@@ -116,6 +134,12 @@ def parse_property_prices(csv_dir):
     https://www.ons.gov.uk/file?uri=%2fpeoplepopulationandcommunity%2fhousing%2fdatasets%2fmedianhousepricefornationalandsubnationalgeographiesexistingdwellingsquarterlyrollingyearhpssadataset11%2fcurrent/hpssadataset11medianpricepaidforadministrativegeographiesexistingdwellings1.xls
     Export the relevant parts of sheet "1a" (median house price) to a CSV file
     """
+    df = load_df(csv_dir, "house_prices.csv")
+    cols = {
+        "Local authority code ": LA_CODE,
+        "Year ending Jun 2021": "property_price",
+    }
+    return subset_rename_df(df, cols).dropna(subset=[LA_CODE])
 
 
 def parse_earnings_to_house_price(csv_dir):
@@ -123,3 +147,9 @@ def parse_earnings_to_house_price(csv_dir):
     https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/ratioofhousepricetoworkplacebasedearningslowerquartileandmedian
     Export the relevant parts of sheet "5c" (ratio of median house price to median earnings) to a CSV file
     """
+    df = load_df(csv_dir, "earnings_price_ratio.csv")
+    cols = {
+        "Code": LA_CODE,
+        "2020": "earnings_house_price_ratio",
+    }
+    return subset_rename_df(df, cols).dropna(subset=[LA_CODE])
