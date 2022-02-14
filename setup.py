@@ -6,10 +6,5 @@ setup(
     description="Helper functions for loading, processing and analysing ONS data",
     author="Nikul Patel",  # Optional
     packages=find_packages(),
-    install_requires=[
-        "pandas",
-        "matplotlib",
-        "seaborn",
-        "pyarrow",
-    ],
+    install_requires=["pandas", "matplotlib", "seaborn", "pyarrow", "sklearn"],
 )
